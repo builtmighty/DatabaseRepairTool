@@ -95,231 +95,174 @@
 
 
 
-add_action( 'admin_menu', 'snc_data_repair_page' );
-add_action( 'wp_ajax_sealcylinderrepairdb', 'sealcylinderrepairdb');
-add_action( 'wp_ajax_sealcylinderrepairdb_continue', 'sealcylinderrepairdb_continue');
-add_action( 'wp_ajax_sealcylinderrepairdb_end', 'sealcylinderrepairdb_end');
+// add_action( 'admin_menu', 'snc_data_repair_page' );
+// add_action( 'wp_ajax_sealcylinderrepairdb', 'sealcylinderrepairdb');
+// add_action( 'wp_ajax_sealcylinderrepairdb_continue', 'sealcylinderrepairdb_continue');
+// add_action( 'wp_ajax_sealcylinderrepairdb_end', 'sealcylinderrepairdb_end');
 
-function snc_data_repair_page() {
-    add_menu_page( 'Seal & Cylinder Database Repair', 'Seal & Cylinder - DB Repair', 'manage_options', 'fix-the-data.php', 'snc_page_function', 'dashicons-admin-tools', 6  );
-}
 
-/**
- * Returns Array fo the Source Repair File in the Plugin
- */
-function getCSV(){
-    return array_map('str_getcsv', file( __DIR__ . '/files/VariationsList.csv'));
-}
 
-function getRunRecord(){
-    if(!file_exists( __DIR__ . '/files/CurrentRun.csv')) return false;
-    if ( 0 == filesize(__DIR__ . '/files/CurrentRun.csv') ) return 200;
-    $toArray = array_map('str_getcsv', file( __DIR__ . '/files/CurrentRun.csv'));
+// /**
+//  * Returns Array fo the Source Repair File in the Plugin
+//  */
+// function getCSV(){
+//     return array_map('str_getcsv', file( __DIR__ . '/files/VariationsList.csv'));
+// }
 
-    #if only the headers remain
-    if(count($toArray) === 1 )return 200;
+// function getRunRecord(){
+//     if(!file_exists( __DIR__ . '/files/CurrentRun.csv')) return false;
+//     if ( 0 == filesize(__DIR__ . '/files/CurrentRun.csv') ) return 200;
+//     $toArray = array_map('str_getcsv', file( __DIR__ . '/files/CurrentRun.csv'));
 
-    $record = array_pop($toArray);
-    newDataRun( $toArray );
-    return $record;
-}
+//     #if only the headers remain
+//     if(count($toArray) === 1 )return 200;
 
-function buttonJS(){
-    ?><script>
-        async function fetchLoop(resp, container){
+//     $record = array_pop($toArray);
+//     newDataRun( $toArray );
+//     return $record;
+// }
 
-            const cont = await fetch( ajaxurl + '?action=sealcylinderrepairdb_continue' );
-            const prog = await cont.json();
-            const processed = parseInt(container.getAttribute('data-processed-records'));
-            container.setAttribute('data-processed-records', (processed + 1));
-            const total = parseInt(container.getAttribute('data-total-records'));
-            const prefix = '<span>processing ' + (processed + 1) + ' of ' + total + ' records: </span>';
-            console.log(prog);
-            if(container) container.innerHTML = '<div>' + prefix + prog.message + '</div>';
-            stat = prog.status;
-            if(prog.status === 100 && processed <= total ){
-                fetchLoop(prog, container);
-            } else {
-            return prog;
-            }
-        }
-        async function doRepairDatabase(e){
-            const container = e.target.closest('.container').querySelector(".results-area");
-            if(container) container.innerHTML = 'Loading...';
-            const response = await fetch( ajaxurl + '?action=sealcylinderrepairdb' );
-            const ret = await response.json();
-            console.log(ret);
-            container.setAttribute('data-total-records', ret.count);
-            container.setAttribute('data-processed-records', "0");
-            if(container) container.innerHTML = ret.message;
-            if(ret.status === 100) {
-                let finished = await fetchLoop(ret, container);
-                let finishedjson = await finished.json();
-                if(finishedjson.status == 200){
-                    const the_end = await fetch( ajaxurl + '?action=sealcylinderrepairdb_end' );
-                    const final = await the_end.json();
-                    console.log(the_end);
-                    if(container) container.innerHTML = the_end.message;
-                }
-            }
-        }
 
-    </script><?php
-}
-function CSVtoTable(){
-    $rows = getCSV();
-    $header = array_shift($rows);
-    #Let's dump to a table
-    $html = '<table id="db_repair_values" style="table-layout:fixed; margin: 0 auto; max-width:80%;">
-            <thead style="display:table-header-group;"><tr>';
-    foreach($header as $head){
-        $html.='<th>'. $head . '</th>';
-    }
-    $html .='</tr></thead><tbody">';
-    #now file is built into array variable
-    foreach($rows as $row){ 
-        $html.='<tr>';
-        foreach($row as $col) $html.='<td>'.$col.'</td>';
-        $html.='</tr>';   	 									
-    }
-    $html.='</tbody><table>';
+// function CSVtoTable(){
+//     $rows = getCSV();
+//     $header = array_shift($rows);
+//     #Let's dump to a table
+//     $html = '<table id="db_repair_values" style="table-layout:fixed; margin: 0 auto; max-width:80%;">
+//             <thead style="display:table-header-group;"><tr>';
+//     foreach($header as $head){
+//         $html.='<th>'. $head . '</th>';
+//     }
+//     $html .='</tr></thead><tbody">';
+//     #now file is built into array variable
+//     foreach($rows as $row){ 
+//         $html.='<tr>';
+//         foreach($row as $col) $html.='<td>'.$col.'</td>';
+//         $html.='</tr>';   	 									
+//     }
+//     $html.='</tbody><table>';
 
-    return $html;
-}
+//     return $html;
+// }
 
-function snc_page_function(){
-    ?>
-    <div class="container">
-        <?php echo buttonJS() ?>
-        <h2>Seal&Cylinder Database Repair Tool</h2>
-        <div class="head">
-            <button id="repairDB" onclick="doRepairDatabase(event)">Repair Database</button>
-        </div>
-        <div class="record-container results-area">
-            <h4>Note: This will take a long time</h4>
-            <?php # echo CSVtoTable() ?>
-        </div>
 
-    <?
-}
-function sealcylinderrepairdb(){
-    #sets up new Data Run
-    $text = get_problem_posts();
-    if($text  == 'No records with issues. Cheers.') {
-        echo json_encode(array('status'=>200, 'message'=>$text));
-        die();
-    } else {
+// function sealcylinderrepairdb(){
+//     #sets up new Data Run
+//     $text = get_problem_posts();
+//     if($text  == 'No records with issues. Cheers.') {
+//         echo json_encode(array('status'=>200, 'message'=>$text));
+//         die();
+//     } else {
 
-        echo json_encode(array('status'=>100, 'message'=>$text[0], 'count'=>$text[1]));
-        die();
-    }
-}
-function sealcylinderrepairdb_end(){
-    #do end shit here
-    echo json_encode(array('status'=>200, 'message'=> 'Finished.'));
-    die();
-}
+//         echo json_encode(array('status'=>100, 'message'=>$text[0], 'count'=>$text[1]));
+//         die();
+//     }
+// }
+// function sealcylinderrepairdb_end(){
+//     #do end shit here
+//     echo json_encode(array('status'=>200, 'message'=> 'Finished.'));
+//     die();
+// }
 
-function sealcylinderrepairdb_continue(){
-    $SETTINGS_BLANKSONLY = true;
-    $Prefix = 'Skipping ';
-    $record = getRunRecord();
-    if(!$record){
-        echo json_encode(array('status'=>400, 'message'=>'Could not open record. Aborted'));
-    }
-    if($record === 200 ){
-        echo json_encode(array('status'=>200, 'message'=> 'Finished! Cleaning up.'));
-    }
+// function sealcylinderrepairdb_continue(){
+//     $SETTINGS_BLANKSONLY = true;
+//     $Prefix = 'Skipping ';
+//     $record = getRunRecord();
+//     if(!$record){
+//         echo json_encode(array('status'=>400, 'message'=>'Could not open record. Aborted'));
+//     }
+//     if($record === 200 ){
+//         echo json_encode(array('status'=>200, 'message'=> 'Finished! Cleaning up.'));
+//     }
     
-    #quick hack for now because we're not reusing this code
-    $record = array_combine(array('VID','SKU','Seal Type','Material','Temp','Pressure','Description','ID','OD','L','HT','CS'), $record);
-    error_log("RECORD x" . print_r($record,true));
-    $variation = wc_get_product($record['VID']); 
-    if( $variation && $variation->variation_is_visible() ){ //Don't replace variations that are fully unset
+//     #quick hack for now because we're not reusing this code
+//     $record = array_combine(array('VID','SKU','Seal Type','Material','Temp','Pressure','Description','ID','OD','L','HT','CS'), $record);
+//     error_log("RECORD x" . print_r($record,true));
+//     $variation = wc_get_product($record['VID']); 
+//     if( $variation && $variation->variation_is_visible() ){ //Don't replace variations that are fully unset
 
-        $post_parent = $variation->get_parent_id();
-        $record_attributes = [];
-        $record_attributes['pa_height'] = isset($record['HT']) ? str_replace('.', '-', $record['HT']) : null;
-        $record_attributes['pa_cross-section'] = isset($record['CS'])?str_replace('.', '-',$record['CS'])  : null;
-        $record_attributes['pa_od'] = isset($record['OD']) ? str_replace('.', '-',$record['OD'])  : null;
-        $record_attributes['pa_id'] = isset($record['ID']) ? str_replace('.', '-', $record['ID'])  : null;
+//         $post_parent = $variation->get_parent_id();
+//         $record_attributes = [];
+//         $record_attributes['pa_height'] = isset($record['HT']) ? str_replace('.', '-', $record['HT']) : null;
+//         $record_attributes['pa_cross-section'] = isset($record['CS'])?str_replace('.', '-',$record['CS'])  : null;
+//         $record_attributes['pa_od'] = isset($record['OD']) ? str_replace('.', '-',$record['OD'])  : null;
+//         $record_attributes['pa_id'] = isset($record['ID']) ? str_replace('.', '-', $record['ID'])  : null;
 
-        $db_attributes = $variation->get_attributes();
-        $new_attributes = [];
-        error_log("Attributes" . print_r($db_attributes, true));
-        foreach($db_attributes as $nme=>$opt){
+//         $db_attributes = $variation->get_attributes();
+//         $new_attributes = [];
+//         error_log("Attributes" . print_r($db_attributes, true));
+//         foreach($db_attributes as $nme=>$opt){
             
-            #check if options are blank
-            if(empty($opt)){
-                if(! is_null($record_attributes[$nme])){ #we want to keep zeros, we don't want to keep null
-                    $Prefix = 'Processing ';
-                    $new_attributes[$nme] = $record_attributes[$nme];
-                }
+//             #check if options are blank
+//             if(empty($opt)){
+//                 if(! is_null($record_attributes[$nme])){ #we want to keep zeros, we don't want to keep null
+//                     $Prefix = 'Processing ';
+//                     $new_attributes[$nme] = $record_attributes[$nme];
+//                 }
      
                 
-            } 
-        }
-        if(!empty($new_attributes)) $db_attributes = array_merge($db_attributes, $new_attributes);
-        error_log("New Attributes "  . print_r($db_attributes, true));
-        $variation->set_attributes($db_attributes);
-        $variation->save();
-        $variation->save_meta_data();        
-        WC_Product_Variable::sync( $post_parent );
-        $product = wc_get_product( $post_parent );
-        $product->save(); // Save the data 
-        //}  
-    }
+//             } 
+//         }
+//         if(!empty($new_attributes)) $db_attributes = array_merge($db_attributes, $new_attributes);
+//         error_log("New Attributes "  . print_r($db_attributes, true));
+//         $variation->set_attributes($db_attributes);
+//         $variation->save();
+//         $variation->save_meta_data();        
+//         WC_Product_Variable::sync( $post_parent );
+//         $product = wc_get_product( $post_parent );
+//         $product->save(); // Save the data 
+//         //}  
+//     }
     
-    echo json_encode(array('status'=>100, 'message'=> $Prefix . 'record ' . $record['VID']));
-    die();
-}
-function get_problem_posts(){
-    global $wpdb;
-    $records = $wpdb->get_col(
-        "SELECT wp_posts.ID 
-        FROM wp_posts INNER JOIN wp_postmeta ON wp_posts.ID = wp_postmeta.post_id
-        WHERE wp_posts.post_type = 'product_variation'
-        AND wp_postmeta.meta_key = '_first_variation_attributes'"
-    );
-    if($records){
-        $currentRun = [];
+//     echo json_encode(array('status'=>100, 'message'=> $Prefix . 'record ' . $record['VID']));
+//     die();
+// }
+// function get_problem_posts(){
+//     global $wpdb;
+//     $records = $wpdb->get_col(
+//         "SELECT wp_posts.ID 
+//         FROM wp_posts INNER JOIN wp_postmeta ON wp_posts.ID = wp_postmeta.post_id
+//         WHERE wp_posts.post_type = 'product_variation'
+//         AND wp_postmeta.meta_key = '_first_variation_attributes'"
+//     );
+//     if($records){
+//         $currentRun = [];
 
-        $init_text = 'Found ' . count($records) . ' records set up incorrectly in the database.';
-        $data_file = getCSV();
-        $headers = array_shift($data_file);
-        // $a_array = array_combine($headers, $data_file);
-        $a_array = array_map(function($x) use ($headers){
-            return array_combine($headers, $x);
-        }, $data_file);
-        $currentRun[0] = $headers;
-        foreach($a_array as $record){
-            if(in_array( $record['VID'], $records)){
-                $currentRun[] = $record;
-            }
-        }
-        $init_text .= ' Matched ' . count( $currentRun ) . ' records from the data sheet.';
-        #Set the current run
+//         $init_text = 'Found ' . count($records) . ' records set up incorrectly in the database.';
+//         $data_file = getCSV();
+//         $headers = array_shift($data_file);
+//         // $a_array = array_combine($headers, $data_file);
+//         $a_array = array_map(function($x) use ($headers){
+//             return array_combine($headers, $x);
+//         }, $data_file);
+//         $currentRun[0] = $headers;
+//         foreach($a_array as $record){
+//             if(in_array( $record['VID'], $records)){
+//                 $currentRun[] = $record;
+//             }
+//         }
+//         $init_text .= ' Matched ' . count( $currentRun ) . ' records from the data sheet.';
+//         #Set the current run
 
-        newDataRun( $currentRun );
-    } else {
-        unlink( __DIR__ . '/files/CurrentRun.csv');
-        return 'No records with issues. Cheers.';
-    }
-    $count = count( $currentRun );
-    return array($init_text, $count);
-}
-function newDataRun( $arr ){
+//         newDataRun( $currentRun );
+//     } else {
+//         unlink( __DIR__ . '/files/CurrentRun.csv');
+//         return 'No records with issues. Cheers.';
+//     }
+//     $count = count( $currentRun );
+//     return array($init_text, $count);
+// }
+// function newDataRun( $arr ){
 
-    if( !$arr || empty($arr) ) return false;
+//     if( !$arr || empty($arr) ) return false;
     
-    $fp = fopen(__DIR__ . '/files/CurrentRun.csv', 'w+');
-    $headers = array_shift($arr);
+//     $fp = fopen(__DIR__ . '/files/CurrentRun.csv', 'w+');
+//     $headers = array_shift($arr);
 
-    fputcsv($fp, $headers);
+//     fputcsv($fp, $headers);
     
-    foreach ($arr as $row) {
-        fputcsv($fp, $row);
-    }
-    rewind($fp); 
-    fclose($fp);
-}
+//     foreach ($arr as $row) {
+//         fputcsv($fp, $row);
+//     }
+//     rewind($fp); 
+//     fclose($fp);
+// }
