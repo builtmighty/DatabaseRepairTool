@@ -1,7 +1,7 @@
 <?php
 /*
- * Plugin Name:       Seal & Cylinder Database Repair Tool
- * Plugin URI:        https://sealandcylinder.com/
+ * Plugin Name:       Built Mighty Database Repair Tool
+ * Plugin URI:        https://builtmighty.com/
  * Description:       Find and Update duplicate SKUs in 
  * Version:           1.0.0
  * Requires at least: 5.2
@@ -96,9 +96,7 @@
 
 
 // add_action( 'admin_menu', 'snc_data_repair_page' );
-// add_action( 'wp_ajax_sealcylinderrepairdb', 'sealcylinderrepairdb');
-// add_action( 'wp_ajax_sealcylinderrepairdb_continue', 'sealcylinderrepairdb_continue');
-// add_action( 'wp_ajax_sealcylinderrepairdb_end', 'sealcylinderrepairdb_end');
+
 
 
 

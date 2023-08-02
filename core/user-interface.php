@@ -3,7 +3,7 @@ namespace builtmighty\tools\database;
 
 class UserInterface extends DatabaseTool {
 
-    public function __construct( $Name ){
+    public function __construct( bool|string $Name ){
         \add_action( 'admin_menu', function() use ($Name){
             call_user_func( array('builtmighty\tools\database\UserInterface', 'data_repair_page'), $Name );
         });
@@ -11,13 +11,31 @@ class UserInterface extends DatabaseTool {
     }
 
     function data_repair_page( $Name ) {
-        \add_menu_page( 'BuiltMighty Database Repair', 'BuiltMighty Database Repair', 'manage_options', 'fix-data.php', function() use ($Name){
-            call_user_func( array('builtmighty\tools\database\UserInterface', 'snc_page_function'), $Name );
-        }, 'dashicons-admin-tools', 20 );
+        if(!$Name){
+
+        } else {
+            \add_menu_page( 'BuiltMighty Database Repair', 'BuiltMighty Database Repair', 'manage_options', 'fix-data.php', function() use ($Name){
+                call_user_func( array('builtmighty\tools\database\UserInterface', 'bmdb_page_function'), $Name );
+            }, 'dashicons-admin-tools', 20 );
+        }
+
 
         #\add_menu_page( 'BuiltMighty Database Repair', 'BuiltMighty Database Repair', 'manage_options', 'fix-data.php', 'snc_page_function', 'dashicons-admin-tools', 6  );
     }
-    function snc_page_function( $Name ){
+    function bmdb_page_function_false(){
+        ?>
+        <div class="container">
+            <?php echo self::buttonJS( $Name ) ?>
+            <h2>Built Mighty Database Repair Tool</h2>
+
+            <div class="record-container results-area">
+                <h4>Your current setup has errors. Go to the reports.php file in the plugin and check your data and callback functions</h4>
+                <?php # echo CSVtoTable() ?>
+            </div>
+    
+        <?   
+    }
+    function bmdb_page_function( $Name ){
         ?>
         <div class="container">
             <?php echo self::buttonJS( $Name ) ?>
@@ -37,12 +55,13 @@ class UserInterface extends DatabaseTool {
         ?><script>
             async function fetchLoop(resp, container){
     
-                const cont = await fetch( ajaxurl + '?action='.$slug.'_continue' );
+                const cont = await fetch( ajaxurl + '?action=bmdt_continue' );
                 const prog = await cont.json();
                 const processed = parseInt(container.getAttribute('data-processed-records'));
-                container.setAttribute('data-processed-records', (processed + 1));
                 const total = parseInt(container.getAttribute('data-total-records'));
-                const prefix = '<span>processing ' + (processed + 1) + ' of ' + total + ' records: </span>';
+                const processing = Math.min(total, (processed + 1));
+                container.setAttribute('data-processed-records', processed + 1);
+                const prefix = '<span>processing ' + processing + ' of ' + total + ' records: </span>';
                 console.log(prog);
                 if(container) container.innerHTML = '<div>' + prefix + prog.message + '</div>';
                 stat = prog.status;
@@ -55,7 +74,7 @@ class UserInterface extends DatabaseTool {
             async function doRepairDatabase(e){
                 const container = e.target.closest('.container').querySelector(".results-area");
                 if(container) container.innerHTML = 'Loading...';
-                const response = await fetch( ajaxurl + '?action=' . $slug );
+                const response = await fetch( ajaxurl + '?action=bmdt_main' );
                 const ret = await response.json();
                 console.log(ret);
                 container.setAttribute('data-total-records', ret.count);
@@ -65,7 +84,7 @@ class UserInterface extends DatabaseTool {
                     let finished = await fetchLoop(ret, container);
                     let finishedjson = await finished.json();
                     if(finishedjson.status == 200){
-                        const the_end = await fetch( ajaxurl + '?action='.$slug.'_end' );
+                        const the_end = await fetch( ajaxurl + '?action=bmdt_end' );
                         const final = await the_end.json();
                         console.log("THE END "); console.log(the_end);
                         if(container) container.innerHTML = the_end.message;

@@ -4,7 +4,7 @@ namespace builtmighty\tools\database;
 class DatabaseTool {
     public static $error;
     private static $instance = null;
-    private static 
+    protected static $run = array();
     public static function getInstance(): DatabaseTool
     {
         if (!isset(self::$instance)) {
@@ -16,7 +16,7 @@ class DatabaseTool {
     /**
      * Make a new run. Returns Self
      */
-    public static function make($Name, string $GetDataFunction, string $CallbackFunction ) : DatabaseRun {
+    public static function make($Name, string $GetDataFunction, string $CallbackFunction ) : bool|DatabaseRun {
         if(!is_callable(array('builtmighty\tools\database\Run', $GetDataFunction))){
             self::$error = 'Get Data Method doesn\'t exist';
             return false;
@@ -26,13 +26,11 @@ class DatabaseTool {
             return false;
         }
 
-        $UI = new UserInterface::( $Name );
+        $UI = isset(self::$error) ? new UserInterface( false ) : new UserInterface( $Name );
 
-        $Data = call_user_func('builtmighty\tools\database\Run', $GetDataFunction);
+        $DataCallable = array('builtmighty\tools\database\Run', $GetDataFunction);
         $Callable = array('builtmighty\tools\database\Run', $CallbackFunction);
-
-        $Data = \apply_filters( 'dbtool_get_data', call_user_func('builtmighty\tools\database\Run', $GetDataFunction));
-
+        return new DatabaseRun($DataCallable, $Callable);
 
     }
     /**
@@ -60,5 +58,15 @@ class DatabaseTool {
     {
         throw new \Exception("Cannot unserialize a singleton.");
     }
+    protected static function addRun( DatabaseRun $run ){
+        self::$run[0] = $run;
+    }
+    public static function hasRun(){
+        return(!empty(self::$run));
+    }
+    public static function getRun(){
+        return self::$run[0] ?? false;
+    }
 
 }
+DatabaseTool::getInstance();
